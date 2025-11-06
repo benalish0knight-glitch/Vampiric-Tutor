@@ -1,0 +1,23 @@
+version: '3.8'
+
+services:
+  bookstack-rag-sync:
+    build: .
+    container_name: bookstack-rag-sync
+    restart: unless-stopped
+    env_file:
+      - .env
+    # A porta 8000 é a porta que receberá o webhook do BookStack.
+    # Você precisará expor esta porta publicamente ou usar um proxy reverso.
+    ports:
+      - "8000:8000"
+    # O volume é útil para desenvolvimento, mas pode ser removido em produção.
+    volumes:
+      - ./app:/app
+    # Se o Open WebUI estiver em outra rede Docker, ajuste aqui.
+    networks:
+      - bookstack-rag-network
+
+networks:
+  bookstack-rag-network:
+    driver: bridge
