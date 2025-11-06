@@ -4,3 +4,4 @@ requests
 python-dotenv
 langchain
 unstructured[structured]
+langchain-text-splitters

@@ -2,11 +2,11 @@
 
 # 1. Configurações do BookStack API
 # URL base da sua instância do BookStack (ex: https://bookstack.exemplo.com)
-BOOKSTACK_BASE_URL=https://wiki.gci.eb.mil.br
+BOOKSTACK_BASE_URL=
 # Token ID da API do BookStack
-BOOKSTACK_TOKEN_ID=P9iGMVi87BvllBzWyq3zvj2DASIP7u2f
+BOOKSTACK_TOKEN_ID=
 # Token Secret da API do BookStack
-BOOKSTACK_TOKEN_SECRET=xJv7v8DvMbcmS31XTjVuWpmumSDQqHgQ
+BOOKSTACK_TOKEN_SECRET=
 
 # 2. Configurações do BookStack Webhook
 # O ID da estante (Shelf) que será monitorada.
@@ -16,10 +16,10 @@ BOOKSTACK_TOKEN_SECRET=xJv7v8DvMbcmS31XTjVuWpmumSDQqHgQ
 BOOKSTACK_SHELF_ID=2
 
 # 3. Configurações do Open WebUI RAG
-# URL base da sua instância do Open WebUI (ex: http://localhost:3000)
-OPENWEBUI_BASE_URL=http://localhost:3000/
+# URL base da sua instância do Open WebUI (ex: http://openwebui:8080)
+OPENWEBUI_BASE_URL=
 # Token de autenticação da API do Open WebUI (se necessário)
-OPENWEBUI_API_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjUyNzc3ODZlLWM3ZGEtNGE2Ny04YzJlLWEwNjczMmE2YTM5MSIsImV4cCI6MTc2NDg3MzAyMn0.fWItLjqpiQ4LfXtgaeYQzYTQt6xZOO0ASuu-5olDn0M
+OPENWEBUI_API_KEY=
 # Nome do Knowledge Base (Base de Conhecimento) no Open WebUI para indexação
 OPENWEBUI_KNOWLEDGE_BASE_NAME=bookstack-knowledge
 
