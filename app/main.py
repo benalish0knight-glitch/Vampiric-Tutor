@@ -2,6 +2,7 @@ import os
 import json
 from dotenv import load_dotenv
 from fastapi import FastAPI, Request, HTTPException, BackgroundTasks
+from starlette.concurrency import run_in_threadpool
 from pydantic import BaseModel
 from typing import Optional
 
@@ -18,7 +19,7 @@ try:
 except ValueError:
     raise ValueError("BOOKSTACK_SHELF_ID deve ser um número inteiro")
 
-# Importar módulos de API e processamento (a serem implementados)
+# Linhas 22 e 23 corrigidas
 from bookstack_api import BookStackAPI
 from rag_processor import RAGProcessor
 
@@ -54,7 +55,11 @@ async def process_bookstack_update(page_id: int, page_name: str):
     print(f"Iniciando processamento para a página ID: {page_id} ({page_name})")
     
     # 1. Extrair conteúdo da página
-    markdown_content = await bookstack_api.get_page_content(page_id)
+    # markdown_content = await bookstack_api.get_page_content(page_id)
+    markdown_content = await run_in_threadpool(
+    bookstack_api.get_page_content, page_id
+)
+
     
     if not markdown_content:
         print(f"Aviso: Não foi possível obter o conteúdo da página {page_id}.")
@@ -83,7 +88,11 @@ async def bookstack_webhook(payload: WebhookPayload, background_tasks: Backgroun
     page_name = payload.related_item.name
 
     # 2. Verificar se o livro pertence à estante monitorada
-    is_in_shelf = await bookstack_api.is_book_in_shelf(book_id, BOOKSTACK_SHELF_ID)
+    # is_in_shelf = await bookstack_api.is_book_in_shelf(book_id, BOOKSTACK_SHELF_ID)
+    is_in_shelf = await run_in_threadpool(
+    bookstack_api.is_book_in_shelf, book_id, BOOKSTACK_SHELF_ID
+)
+
 
     if not is_in_shelf:
         print(f"Atualização ignorada: Livro ID {book_id} não pertence à estante monitorada ID {BOOKSTACK_SHELF_ID}.")

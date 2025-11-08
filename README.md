@@ -2,8 +2,64 @@
 
 
 <div align="center">
-<img src="https://cards.scryfall.io/large/front/7/9/796018f1-f1e0-41ab-be55-9cb61bb2e9fe.jpg?1562919357" alt="Vampiric Tutor" width="50%" height="50%">
+<img src="./img/vampiric-tutor.jpg" alt="Vampiric Tutor" width="50%" height="50%">
 </div>
+
+
+
+
+```bash
+docker compose up -d
+
+docker compose ps
+
+curl http://localhost:8000/
+```
+
+```json
+{"message": "BookStack RAG Sync Service está rodando."}
+```
+
+Comando para Enviar o Webhook Simulado:
+
+Salve como webhook_payload.json
+
+```json
+{
+    "event": "page_update",
+    "text": "Página 'Minha Página de Teste' foi atualizada.",
+    "url": "https://bookstack.exemplo.com/books/5/page/101",
+    "related_item": {
+        "id": 101,
+        "name": "Minha Página de Teste",
+        "slug": "minha-pagina-de-teste",
+        "book_id": 2,
+        "chapter_id": null,
+        "url": "https://bookstack.exemplo.com/books/5/page/101"
+    }
+}
+```
+
+```bash
+curl -X POST http://localhost:8000/webhook/bookstack \
+     -H "Content-Type: application/json" \
+     -d @webhook_payload.json
+
+```
+
+Resultado Esperado (Resposta Imediata do Servidor ):
+
+```json
+{"status": "success", "message": "Processamento da página 101 iniciado em background."}
+
+```
+
+Verificação do processamento em background
+
+```bash
+docker-compose logs -f bookstack-rag-sync
+```
+
 
 Este projeto Python, orquestrado com Docker Compose, atua como um serviço de sincronização em tempo real entre o **BookStack** e o sistema **RAG (Retrieval-Augmented Generation)** do **Open WebUI**.
 

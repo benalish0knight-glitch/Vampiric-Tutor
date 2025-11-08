@@ -8,7 +8,9 @@ services:
     # A porta 8000 é a porta que receberá o webhook do BookStack.
     # Você precisará expor esta porta publicamente ou usar um proxy reverso.
     ports:
-      - "8001:8000"
+      - "8000:8000"
+    environment:
+      - PYTHONPATH=/app
     # O volume é útil para desenvolvimento, mas pode ser removido em produção.
     volumes:
       - ./app:/app
