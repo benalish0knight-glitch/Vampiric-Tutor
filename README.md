@@ -5,22 +5,35 @@
 <img src="./img/vampiric-tutor.jpg" alt="Vampiric Tutor" width="50%" height="50%">
 </div>
 
-
-
+## Iniciando o serviço
 
 ```bash
 docker compose up -d
 
 docker compose ps
+```
+## Teste inicial
 
+```bash
 curl http://localhost:8000/
 ```
 
 ```json
-{"message": "BookStack RAG Sync Service está rodando."}
+{"message":"BookStack RAG Sync Service está rodando.","monitored_books":[1,2,3]}
 ```
 
-Comando para Enviar o Webhook Simulado:
+
+```bash
+curl http://localhost:8000/health
+```
+
+```json
+{"status":"healthy","monitored_books_count":3,"monitored_books":[1,2,3]}
+```
+
+### Teste com Bookstack (Webhook):
+
+#### Teste 1:
 
 Salve como webhook_payload.json
 
@@ -28,14 +41,14 @@ Salve como webhook_payload.json
 {
     "event": "page_update",
     "text": "Página 'Minha Página de Teste' foi atualizada.",
-    "url": "https://bookstack.exemplo.com/books/5/page/101",
+    "url": "https://bookstack.exemplo.com/books/2/page/101",
     "related_item": {
         "id": 101,
         "name": "Minha Página de Teste",
         "slug": "minha-pagina-de-teste",
         "book_id": 2,
         "chapter_id": null,
-        "url": "https://bookstack.exemplo.com/books/5/page/101"
+        "url": "https://bookstack.exemplo.com/books/2/page/101"
     }
 }
 ```
@@ -50,92 +63,52 @@ curl -X POST http://localhost:8000/webhook/bookstack \
 Resultado Esperado (Resposta Imediata do Servidor ):
 
 ```json
-{"status": "success", "message": "Processamento da página 101 iniciado em background."}
-
+{"status":"success","message":"Processamento da página 101 iniciado em background."}
 ```
 
-Verificação do processamento em background
+#### Teste 2
 
 ```bash
-docker-compose logs -f bookstack-rag-sync
+curl -X POST http://localhost:8000/webhook/bookstack \
+  -H "Content-Type: application/json" \
+  -d '{
+    "event": "page_update",
+    "text": "Benny updated page \"My wonderful updated page\"",
+    "url": "https://bookstack.local/books/my-awesome-book/page/my-wonderful-updated-page",
+    "related_item": {
+      "id": 2432,
+      "book_id": 13,
+      "chapter_id": 554,
+      "name": "My wonderful updated page",
+      "slug": "my-wonderful-updated-page",
+      "url": "https://bookstack.local/books/my-awesome-book/page/my-wonderful-updated-page"
+    }
+  }'
 ```
 
-
-Este projeto Python, orquestrado com Docker Compose, atua como um serviço de sincronização em tempo real entre o **BookStack** e o sistema **RAG (Retrieval-Augmented Generation)** do **Open WebUI**.
-
-O serviço monitora atualizações em uma estante específica do BookStack via webhook, extrai o conteúdo da página atualizada e o processa (dividindo em *chunks*) para indexação no Knowledge Base do Open WebUI.
-
-## Funcionalidades
-
-1.  **Receptor Webhook (FastAPI)**: Recebe notificações de `page_update` e `page_create` do BookStack.
-2.  **Filtro de Estante**: Verifica se a página atualizada pertence a uma estante (Shelf ID) pré-configurada.
-3.  **Extração de Conteúdo**: Utiliza a API REST do BookStack para extrair o conteúdo da página em formato Markdown.
-4.  **Processamento RAG (LangChain)**: Divide o conteúdo em *chunks* de tamanho configurável para otimizar a indexação e a recuperação de contexto.
-5.  **Simulação de Ingestão Open WebUI**: Simula o envio dos *chunks* para o Knowledge Base do Open WebUI.
-
-## Estrutura do Projeto
-
-```
-bookstack-rag-sync/
-├── app/
-│   ├── main.py             # Aplicação FastAPI (Webhook e orquestração)
-│   ├── bookstack_api.py    # Cliente para a API do BookStack
-│   └── rag_processor.py    # Lógica de chunking e simulação de ingestão RAG
-├── .env                    # Variáveis de ambiente (credenciais e configurações)
-├── Dockerfile              # Definição da imagem Docker da aplicação
-├── docker-compose.yml      # Orquestração do serviço
-└── requirements.txt        # Dependências Python
+```json
+{"status":"success","message":"Processamento da página 2432 iniciado em background."}
 ```
 
-## Configuração
+#### Teste 2
 
-### 1. Variáveis de Ambiente (`.env`)
+```bash
+curl -X POST http://localhost:8000/webhook/bookstack \
+  -H "Content-Type: application/json" \
+  -d '{
+    "event": "page_update",
+    "text": "Test page update",
+    "url": "https://bookstack.local/books/test/page/test",
+    "related_item": {
+      "id": 1,
+      "book_id": 999,
+      "name": "Test Page",
+      "slug": "test-page",
+      "url": "https://bookstack.local/books/test/page/test"
+    }
+  }'
+```
 
-Crie e preencha o arquivo `.env` na raiz do projeto com suas credenciais e configurações.
-
-| Variável | Descrição | Exemplo |
-| :--- | :--- | :--- |
-| `BOOKSTACK_BASE_URL` | URL base da sua instância do BookStack. | `https://bookstack.exemplo.com` |
-| `BOOKSTACK_TOKEN_ID` | Token ID da API do BookStack. | `seu_token_id` |
-| `BOOKSTACK_TOKEN_SECRET` | Token Secret da API do BookStack. | `seu_token_secret` |
-| `BOOKSTACK_SHELF_ID` | **ID da estante a ser monitorada.** | `2` |
-| `OPENWEBUI_BASE_URL` | URL base da sua instância do Open WebUI. | `http://openwebui:8080` |
-| `OPENWEBUI_API_KEY` | Token de autenticação da API do Open WebUI (se necessário). | `seu_api_key` |
-| `OPENWEBUI_KNOWLEDGE_BASE_NAME` | Nome do Knowledge Base no Open WebUI. | `bookstack-knowledge` |
-| `CHUNK_SIZE` | Tamanho máximo de cada chunk de texto (padrão: 1000). | `1000` |
-| `CHUNK_OVERLAP` | Sobreposição de texto entre chunks (padrão: 200). | `200` |
-
-### 2. Configuração do Webhook no BookStack
-
-1.  Acesse a área de administração do seu BookStack.
-2.  Vá para **Settings** > **Webhooks**.
-3.  Crie um novo Webhook com as seguintes configurações:
-    *   **Webhook Endpoint**: A URL pública do seu serviço, apontando para o endpoint do webhook. Exemplo: `http://seu-ip-publico:8000/webhook/bookstack`
-    *   **Events**: Selecione os eventos **Page Update** e **Page Create**.
-
-## Execução do Projeto
-
-1.  **Construir e Iniciar o Serviço:**
-    ```bash
-    docker-compose up --build -d
-    ```
-2.  **Verificar Logs:**
-    ```bash
-    docker-compose logs -f bookstack-rag-sync
-    ```
-
-## Observação sobre a Ingestão no Open WebUI
-
-O módulo `rag_processor.py` contém uma **simulação** da chamada de API para o Open WebUI.
-
-> **Atenção**: O Open WebUI não possui um endpoint de API público e direto para upload de documentos RAG. A ingestão é feita geralmente via interface ou por meio de um processo de sincronização de diretório.
-
-Se o Open WebUI não expuser um endpoint de ingestão direta, você precisará adaptar a função `_simulate_openwebui_ingestion` para:
-
-1.  Salvar o conteúdo processado em um arquivo Markdown (ex: `/data/page_123.md`).
-2.  Montar o diretório `/data` no container do Open WebUI para que ele possa monitorar e indexar automaticamente os novos arquivos.
-
-A lógica de chunking e processamento de metadados está pronta para ser integrada ao método de ingestão que você escolher.
-
----
-*Documento gerado por **Manus AI**.*
+```json
+{"status":"ignored","reason":"Book not in monitored list"}
+```

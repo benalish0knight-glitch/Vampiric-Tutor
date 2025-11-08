@@ -4,22 +4,22 @@ from dotenv import load_dotenv
 from fastapi import FastAPI, Request, HTTPException, BackgroundTasks
 from starlette.concurrency import run_in_threadpool
 from pydantic import BaseModel
-from typing import Optional
+from typing import Optional, List
 
 # Carregar variáveis de ambiente do arquivo .env
 load_dotenv()
 
 # --- Configurações ---
-BOOKSTACK_SHELF_ID = os.getenv("BOOKSTACK_SHELF_ID")
-if not BOOKSTACK_SHELF_ID:
-    raise ValueError("BOOKSTACK_SHELF_ID não está configurado no .env")
+BOOKSTACK_BOOK_IDS = os.getenv("BOOKSTACK_BOOK_IDS")
+if not BOOKSTACK_BOOK_IDS:
+    raise ValueError("BOOKSTACK_BOOK_IDS não está configurado no .env")
 
 try:
-    BOOKSTACK_SHELF_ID = int(BOOKSTACK_SHELF_ID)
+    # Converter string de IDs separados por vírgula em lista de inteiros
+    MONITORED_BOOK_IDS = [int(book_id.strip()) for book_id in BOOKSTACK_BOOK_IDS.split(",")]
 except ValueError:
-    raise ValueError("BOOKSTACK_SHELF_ID deve ser um número inteiro")
+    raise ValueError("BOOKSTACK_BOOK_IDS deve conter números inteiros separados por vírgula (ex: 1,2,3)")
 
-# Linhas 22 e 23 corrigidas
 from bookstack_api import BookStackAPI
 from rag_processor import RAGProcessor
 
@@ -55,11 +55,9 @@ async def process_bookstack_update(page_id: int, page_name: str):
     print(f"Iniciando processamento para a página ID: {page_id} ({page_name})")
     
     # 1. Extrair conteúdo da página
-    # markdown_content = await bookstack_api.get_page_content(page_id)
     markdown_content = await run_in_threadpool(
-    bookstack_api.get_page_content, page_id
-)
-
+        bookstack_api.get_page_content, page_id
+    )
     
     if not markdown_content:
         print(f"Aviso: Não foi possível obter o conteúdo da página {page_id}.")
@@ -87,16 +85,15 @@ async def bookstack_webhook(payload: WebhookPayload, background_tasks: Backgroun
     book_id = payload.related_item.book_id
     page_name = payload.related_item.name
 
-    # 2. Verificar se o livro pertence à estante monitorada
-    # is_in_shelf = await bookstack_api.is_book_in_shelf(book_id, BOOKSTACK_SHELF_ID)
-    is_in_shelf = await run_in_threadpool(
-    bookstack_api.is_book_in_shelf, book_id, BOOKSTACK_SHELF_ID
-)
+    # 2. Verificar se o livro está na lista de livros monitorados
+    is_monitored = await run_in_threadpool(
+        bookstack_api.is_book_monitored, book_id, MONITORED_BOOK_IDS
+    )
 
-
-    if not is_in_shelf:
-        print(f"Atualização ignorada: Livro ID {book_id} não pertence à estante monitorada ID {BOOKSTACK_SHELF_ID}.")
-        return {"status": "ignored", "reason": "Book not in monitored shelf"}
+    if not is_monitored:
+        print(f"Atualização ignorada: Livro ID {book_id} não está na lista de livros monitorados.")
+        print(f"Livros monitorados: {MONITORED_BOOK_IDS}")
+        return {"status": "ignored", "reason": "Book not in monitored list"}
 
     # 3. Adicionar a tarefa de processamento em background
     background_tasks.add_task(process_bookstack_update, page_id, page_name)
@@ -105,4 +102,16 @@ async def bookstack_webhook(payload: WebhookPayload, background_tasks: Backgroun
 
 @app.get("/")
 def read_root():
-    return {"message": "BookStack RAG Sync Service está rodando."}
+    return {
+        "message": "BookStack RAG Sync Service está rodando.",
+        "monitored_books": MONITORED_BOOK_IDS
+    }
+
+@app.get("/health")
+def health_check():
+    """Endpoint de verificação de saúde do serviço"""
+    return {
+        "status": "healthy",
+        "monitored_books_count": len(MONITORED_BOOK_IDS),
+        "monitored_books": MONITORED_BOOK_IDS
+    }

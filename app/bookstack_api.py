@@ -50,12 +50,12 @@ class BookStackAPI:
             print(f"Erro de requisição ao acessar {url}: {e}")
             return None
 
-    def get_shelf_details(self, shelf_id: int) -> dict:
+    def get_book_details(self, book_id: int) -> dict:
         """
-        Obtém os detalhes de uma estante, incluindo a lista de livros.
-        Endpoint: GET /api/shelves/{id}
+        Obtém os detalhes de um livro, incluindo suas páginas e capítulos.
+        Endpoint: GET /api/books/{id}
         """
-        endpoint = f"shelves/{shelf_id}"
+        endpoint = f"books/{book_id}"
         return self._make_request("GET", endpoint)
 
     def get_page_content(self, page_id: int) -> str:
@@ -72,17 +72,8 @@ class BookStackAPI:
         
         return ""
 
-    def is_book_in_shelf(self, book_id: int, shelf_id: int) -> bool:
+    def is_book_monitored(self, book_id: int, monitored_book_ids: list) -> bool:
         """
-        Verifica se um livro específico pertence à estante monitorada.
+        Verifica se um livro específico está na lista de livros monitorados.
         """
-        shelf_data = self.get_shelf_details(shelf_id)
-        
-        if not shelf_data or 'books' not in shelf_data:
-            print(f"Aviso: Não foi possível obter os detalhes da estante ID {shelf_id}.")
-            return False
-
-        # Verifica se o book_id está na lista de livros da estante
-        book_ids_in_shelf = [book['id'] for book in shelf_data['books']]
-        
-        return book_id in book_ids_in_shelf
+        return book_id in monitored_book_ids
