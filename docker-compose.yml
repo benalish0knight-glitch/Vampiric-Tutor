@@ -11,6 +11,7 @@ services:
       - "8000:8000"
     environment:
       - PYTHONPATH=/app
+      
     # O volume é útil para desenvolvimento, mas pode ser removido em produção.
     volumes:
       - ./app:/app
