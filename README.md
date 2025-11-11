@@ -112,3 +112,67 @@ curl -X POST http://localhost:8000/webhook/bookstack \
 ```json
 {"status":"ignored","reason":"Book not in monitored list"}
 ```
+
+
+
+### Teste com OpenWebUI:
+
+```bash
+PYTHONPATH=. pytest test/test_rag_processor.py
+
+PYTHONPATH=. pytest
+```
+
+```
+collected 20 items  
+
+test/test_rag_processor.py ....................                    
+                                  [100%]
+=============================== 20 passed in 0.75s ==========================
+```
+
+```bash
+PYTHONPATH=. pytest test/test_rag_processor.py --cov=app.rag_processor --cov-report=html
+```
+
+```
+=============================== 20 passed in 0.09s ==========================
+```
+
+```bash
+PYTHONPATH=. pytest test/test_rag_processor.py::TestChunking::test_split_into_chunks_basic -v
+```
+
+```
+=============================== 20 passed in 0.86s ==========================
+```
+
+#### Estrutura dos Testes Unitários
+
+1)  TestRAGProcessorInitialization
+
+Valida a inicialização correta do processador:
+
+2)  TestChunking
+
+Verifica a divisão de conteúdo em chunks:
+
+3)  TestOpenWebUIIngestion
+
+Testa o processo de ingestão
+
+4)  TestProcessAndIndex
+
+Valida o fluxo completo:
+
+- Pipeline end-to-end
+- Processamento com conteúdo vazio
+- Chamadas assíncronas
+
+5)  TestDataValidation
+
+Verifica integridade dos dados
+
+6)  TestPerformance
+
+- Testa limites e performance
